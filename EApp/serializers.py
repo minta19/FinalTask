@@ -38,7 +38,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     stock_availability = serializers.SerializerMethodField()
     class Meta:
         model=Product
-        fields=['product_name','price','product_image','stock_availability']
+        fields=['id','product_name','price','product_image','stock_availability']
 
     def get_stock_availability(self,obj):
         return obj.quantity if obj.quantity > 0 else "Out of Stock"
