@@ -1,0 +1,29 @@
+# Ignore virtual environment
+myenv/
+
+# Ignore Django development server logs
+*.log
+
+# Ignore database file
+db.sqlite3
+
+# Ignore static and media files
+/static/
+/media/
+
+# Ignore environment-specific settings
+.env
+
+# Ignore IDE-specific files (e.g., PyCharm)
+.idea/
+.vscode/
+
+# Ignore compiled Python bytecode
+*.pyc
+
+# Ignore cache and temporary files
+__pycache__/
+*.swp
+
+# Ignore sensitive or private files
+secret_key.txt

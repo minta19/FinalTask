@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 30px;
+            background-color: #f2f2f2;
+        }
+        h2 {
+            color: #333333;
+        }
+        p {
+            color: #555555;
+        }
+        .heading {
+            background-color: #007bff;
+            color: #ffffff;
+            padding: 10px;
+            text-align: center;
+        }
+        .content {
+            background-color: #ffffff;
+            padding: 20px;
+            border: 1px solid #cccccc;
+        }
+        .ordered-product {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border: 1px solid #dddddd;
+            margin-bottom: 10px;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="heading">
+        <h2>ORDER CONFIRMATION</h2>
+    </div>
+    <div class="content">
+        <p>Hello <strong>Admin</strong>,</p>
+        <p>A new order has been successfully placed by <strong>{{ user.username }}</strong>.</p>
+        <p>Order ID: {{ order.id }}</p>
+        <p>Total Amount: {{ order.total_amount }}</p>
+        <p><strong>Ordered Products:</strong></p>
+        <div class="ordered-product">
+            {% for ordered_product in ordered_products %}
+                <p>Product ordered: {{ ordered_product.item_ordered.product_name }}</p>
+                <p>Price of the product: {{ ordered_product.ordered_price }}</p> 
+                <p>Number of {{ ordered_product.item_ordered.product_name }} ordered: {{ ordered_product.ordered_quantity }}</p>
+            {% endfor %}
+        </div>
+    
+        <p>Status: {{ order.status }}</p>
+        
+        <p>Best regards,</p>
+        <p>The E-commerce Team</p>
+    </div>
+    
+</body>
+</html>
