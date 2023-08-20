@@ -35,12 +35,13 @@ class CategoryViewSerializer(serializers.ModelSerializer):
         fields=['id','category_name']
 
 class ProductListSerializer(serializers.ModelSerializer):
+    categories=serializers.StringRelatedField(many=True)
     stock_availability = serializers.SerializerMethodField()
     class Meta:
         model=Product
-        fields=['id','product_name','price','product_image','stock_availability']
+        fields=['id','product_name','price','product_image','stock_availability','categories']
 
-    def get_stock_availability(self,obj):
+    def get_stock_availability(self,obj): 
         return obj.quantity if obj.quantity > 0 else "Out of Stock"
     
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -76,11 +77,14 @@ class CartItemSerializer(serializers.ModelSerializer):
         return obj.Number_of_items * obj.product.price
 
 class CartProductDetailSerializer(serializers.ModelSerializer):
-    product=ProductListSerializer(read_only=True)
+    product=ProductDetailSerializer(read_only=True)
+    total_cost=serializers.SerializerMethodField()
     class Meta:
         model=ItemsInCart
-        fields=['product','Number_of_items']
-
+        fields=['product','Number_of_items','total_cost']
+    
+    def get_total_cost(self,obj):
+        return obj.Number_of_items * obj.product.price
 
 class EditNumberOfItemSerializer(serializers.ModelSerializer):
     class Meta:
@@ -113,4 +117,4 @@ class OrderHistorySerializer(serializers.ModelSerializer):
     ordered_items=OrderedItemSerializer(many=True, read_only=True)
     class Meta:
         model=Order
-        fields=['id','user','ordered_items','total_amount','date_of_order','status','Address']
+        fields=['id','ordered_items','total_amount','date_of_order','status','Address']

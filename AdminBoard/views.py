@@ -15,6 +15,9 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.conf import settings
 from .models import PromotionalEmail
+from rest_framework.exceptions import APIException
+from django_filters import rest_framework as filters
+
 
 class AdminLogin(APIView):
   def post(self,request):
@@ -74,11 +77,26 @@ class AdminProductEdit(generics.RetrieveUpdateDestroyAPIView):
         return Response({"Message":"PRODUCT REMOVED FROM THE SITE"})
 
 class AdminProductView(generics.ListAPIView):
-    permission_classes=[IsAdminUser,IsAuthenticated]
+    # permission_classes=[IsAdminUser,IsAuthenticated]
     serializer_class=ProductListSerializer
     authentication_classes=[JWTAuthentication]
     queryset=Product.objects.all()
     pagination_class=customPagination
+    filter_backends=[filters.DjangoFilterBackend]
+    filterset_fields={'categories__category_name': ['exact', 'icontains'],'price':['exact']}
+
+    def get_queryset(self):
+     queryset= super().get_queryset()
+     
+     min_price=self.request.query_params.get('min_price')
+     if min_price:
+        queryset=queryset.filter(price__gte=min_price)
+     max_price=self.request.query_params.get('max_price')
+     if max_price:
+        queryset=queryset.filter(price__lte=max_price)
+     return queryset
+ 
+
 
 class AdminProductRetrieve(generics.RetrieveAPIView):
    permission_classes=[IsAuthenticated,IsAdminUser]
@@ -123,7 +141,11 @@ class UserDelete(generics.DestroyAPIView):
     def delete(self, request, *args, **kwargs):
         response= super().delete(request, *args, **kwargs)
         return Response({"MESSAGE":"User Account  Deleted"})
-    
+
+class EmailSendingError(APIException):
+    status_code = 500
+    default_detail = 'Error sending email.'
+
 class OrderStatusEdit(generics.UpdateAPIView):
     permission_classes=[IsAdminUser,IsAuthenticated]
     authentication_classes=[JWTAuthentication]
@@ -135,16 +157,22 @@ class OrderStatusEdit(generics.UpdateAPIView):
         serializer = self.get_serializer(order_obj, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         order_obj=serializer.save()
-        if 'status' in serializer.validated_data:
-            updated_status = serializer.validated_data['status']
-            subject=f"ORDER STATUS UPDATE OF ORDER #{order_obj.id}"
-            context = {'order': order_obj, 'updated_status': updated_status}
-            html_message = render_to_string('order_status.html', context)
-            text_message = strip_tags(html_message)
-            from_email = settings.DEFAULT_FROM_EMAIL
-            recipient_list = [order_obj.user.email]
-            send_mail(subject, text_message, from_email, recipient_list, html_message=html_message)
-        
+        try:
+            if 'status' in serializer.validated_data:
+                updated_status = serializer.validated_data['status']
+                subject=f"ORDER STATUS UPDATE OF ORDER #{order_obj.id}"
+                context = {'order': order_obj, 'updated_status': updated_status}
+                html_message = render_to_string('order_status.html', context)
+                text_message = strip_tags(html_message)
+                from_email = settings.DEFAULT_FROM_EMAIL
+                recipient_list = [order_obj.user.email]
+                send_mail(subject, text_message, from_email, recipient_list, html_message=html_message)
+        except Exception as e:
+            return Response({
+                "Error": "Failed to send email.",
+                "Recipient": recipient_list,
+                "Content": subject
+            }, status=500)
 
         return Response({"Message":"Status Updated"})
     
@@ -166,9 +194,18 @@ class PromotionalEmailView(generics.CreateAPIView):
         recipients=CustomUser.objects.filter(is_superuser=False).values_list('email',flat=True)
         html_message = render_to_string('promo_email.html', {'content': content})
         plain_message = strip_tags(html_message)
-
+        error_response = {
+                    "detail": "Error sending promotional emails.",
+                    "subject": subject,
+                    "content": content,
+                    "recipients": recipients,
+                    }
         for recipient_email in recipients:
-            send_mail(subject, plain_message, sender_email, [recipient_email],html_message=html_message, fail_silently=False)
+            try:
+                send_mail(subject, plain_message, sender_email, [recipient_email],html_message=html_message, fail_silently=False)
+            except Exception as e:
+                error_response["error_message"] = str(e)   
+                raise EmailSendingError(detail=error_response)
 
         return Response({"MESSAGE":"PROMO EMAILS SENT"})
     

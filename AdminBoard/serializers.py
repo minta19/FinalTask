@@ -45,10 +45,6 @@ class EditOrderStatusSerializer(serializers.ModelSerializer):
         model=Order
         fields=['status']
 
-
-
-
-
 class PromotionalEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model=PromotionalEmail
