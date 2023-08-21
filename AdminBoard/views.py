@@ -77,7 +77,7 @@ class AdminProductEdit(generics.RetrieveUpdateDestroyAPIView):
         return Response({"Message":"PRODUCT REMOVED FROM THE SITE"})
 
 class AdminProductView(generics.ListAPIView):
-    # permission_classes=[IsAdminUser,IsAuthenticated]
+    permission_classes=[IsAdminUser,IsAuthenticated]
     serializer_class=ProductListSerializer
     authentication_classes=[JWTAuthentication]
     queryset=Product.objects.all()
